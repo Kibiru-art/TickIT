@@ -42,8 +42,7 @@ INSTALLED_APPS = [
 # MIDDLEWARE
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # 👈 MUST be here
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Must be here
 
     'corsheaders.middleware.CorsMiddleware',
 
@@ -79,11 +78,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'tickit_backend.wsgi.application'
 
 
-# DATABASE (Render PostgreSQL)
+# DATABASES (Local + Render PostgreSQL)
 if os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL')
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600
         )
     }
 else:
@@ -115,7 +115,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# WhiteNoise config
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
