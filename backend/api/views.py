@@ -1,23 +1,25 @@
 # api/views.py
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.core.files.storage import default_storage
+from django.conf import settings
+import os
+import cloudinary.uploader
+
 from .models import Ticket, Client, Attachment, Technician
 from .serializers import (
     TicketSerializer, ClientSerializer, TechnicianSerializer, AttachmentSerializer,
     UserProfileSerializer, UpdateProfileSerializer, ChangePasswordSerializer, ChangeEmailSerializer
 )
-import os  # <-- added for environment variables
-from django.core.files.storage import default_storage  # <-- added
-from django.conf import settings  # <-- added
 
 User = get_user_model()
 
-# ======================= EXISTING TICKET VIEWSET (unchanged) =======================
+# ======================= TICKET VIEWSET =======================
 
 class TicketViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -58,52 +60,46 @@ class TicketViewSet(viewsets.ModelViewSet):
         ticket.status = new_status
         ticket.save()
         return Response({'status': ticket.status, 'message': 'Status updated successfully'})
-# Inside your TicketViewSet, replace the upload_attachments method:
 
-@action(detail=True, methods=['post'], url_path='attachments')
-def upload_attachments(self, request, pk=None):
-    import cloudinary.uploader
-    from django.core.files.storage import default_storage
-    import os
-    from django.conf import settings
+    @action(detail=True, methods=['post'], url_path='attachments')
+    def upload_attachments(self, request, pk=None):
+        """Upload files directly to Cloudinary and store the URL in the Attachment model."""
+        print("=" * 50)
+        print("DEBUG: Uploading attachment manually to Cloudinary")
+        print(f"DEBUG: CLOUDINARY_CLOUD_NAME = {os.environ.get('CLOUDINARY_CLOUD_NAME')}")
+        print("=" * 50)
 
-    # Optional debug prints
-    print("=" * 50)
-    print("DEBUG: Uploading attachment manually to Cloudinary")
-    print(f"DEBUG: CLOUDINARY_CLOUD_NAME = {os.environ.get('CLOUDINARY_CLOUD_NAME')}")
-    print("=" * 50)
+        ticket = self.get_object()
+        files = request.FILES.getlist('files')
+        if not files:
+            return Response({'error': 'No files provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-    ticket = self.get_object()
-    files = request.FILES.getlist('files')
-    if not files:
-        return Response({'error': 'No files provided'}, status=status.HTTP_400_BAD_REQUEST)
+        attachments = []
+        for file in files:
+            try:
+                upload_result = cloudinary.uploader.upload(file)
+                cloudinary_url = upload_result['secure_url']
+            except Exception as e:
+                print(f"Cloudinary upload error: {e}")
+                return Response({'error': f'Failed to upload file: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    attachments = []
-    for file in files:
-        # Upload file directly to Cloudinary
-        try:
-            upload_result = cloudinary.uploader.upload(file)
-            cloudinary_url = upload_result['secure_url']
-        except Exception as e:
-            print(f"Cloudinary upload error: {e}")
-            return Response({'error': f'Failed to upload file: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            attachment = Attachment.objects.create(
+                ticket=ticket,
+                file=cloudinary_url,   # store the URL
+                name=file.name
+            )
+            print(f"DEBUG: Saved file URL = {attachment.file}")
 
-        # Create attachment record with the Cloudinary URL
-        attachment = Attachment.objects.create(
-            ticket=ticket,
-            file=cloudinary_url,      # store the URL (not the file)
-            name=file.name
-        )
-        print(f"DEBUG: Saved file URL = {attachment.file}")
+            attachments.append({
+                'id': attachment.id,
+                'name': attachment.name,
+                'url': attachment.file,
+                'uploaded_at': attachment.uploaded_at,
+            })
+        return Response({'attachments': attachments}, status=status.HTTP_201_CREATED)
 
-        attachments.append({
-            'id': attachment.id,
-            'name': attachment.name,
-            'url': attachment.file,
-            'uploaded_at': attachment.uploaded_at,
-        })
-    return Response({'attachments': attachments}, status=status.HTTP_201_CREATED)
-# ======================= EXISTING GET CURRENT USER VIEW (unchanged) =======================
+
+# ======================= GET CURRENT USER VIEW =======================
 
 class GetCurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
@@ -132,14 +128,9 @@ class GetCurrentUserView(APIView):
         return Response(data)
 
 
-# ======================= NEW PROFILE MANAGEMENT VIEWS =======================
+# ======================= PROFILE MANAGEMENT VIEWS =======================
 
 class ProfileView(APIView):
-    """
-    Retrieve and update the authenticated user's profile (including technician fields).
-    GET: returns full profile.
-    PATCH: updates name, phone, specialty (if technician exists) and email, first_name, last_name (on User).
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -171,20 +162,17 @@ class ProfileView(APIView):
 
     def patch(self, request):
         user = request.user
-        # Update User fields
         if 'first_name' in request.data:
             user.first_name = request.data['first_name']
         if 'last_name' in request.data:
             user.last_name = request.data['last_name']
         if 'email' in request.data:
-            # Optional: add email uniqueness validation
             new_email = request.data['email']
             if User.objects.filter(email=new_email).exclude(id=user.id).exists():
                 return Response({'error': 'Email already in use'}, status=status.HTTP_400_BAD_REQUEST)
             user.email = new_email
         user.save()
 
-        # Update Technician fields if profile exists
         try:
             tech = user.technician_profile
             if 'name' in request.data:
@@ -195,53 +183,40 @@ class ProfileView(APIView):
                 tech.specialty = request.data['specialty']
             tech.save()
         except AttributeError:
-            # No technician profile – nothing to update
             pass
 
-        # Return updated profile
         return self.get(request)
 
 
 class ChangePasswordView(APIView):
-    """Change user password with old password verification"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-
         user = request.user
         user.set_password(serializer.validated_data['new_password'])
         user.save()
-
         return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
 
 
 class ChangeEmailView(APIView):
-    """Change email address (requires password confirmation)"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = ChangeEmailSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-
         user = request.user
         user.email = serializer.validated_data['new_email']
         user.save()
-
         return Response({"message": "Email changed successfully.", "email": user.email}, status=status.HTTP_200_OK)
 
 
 # ======================= DEBUG VIEW (temporary) =======================
-from rest_framework.decorators import api_view, permission_classes
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def debug_storage(request):
-    """
-    Debug endpoint to check Cloudinary configuration and storage backend.
-    Call: GET /api/debug-storage/
-    """
     return Response({
         'cloudinary_cloud_name_from_settings': getattr(settings, 'CLOUDINARY', {}).get('cloud_name'),
         'default_storage_class': default_storage.__class__.__name__,
