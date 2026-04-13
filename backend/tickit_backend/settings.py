@@ -39,13 +39,11 @@ INSTALLED_APPS = [
 ]
 
 
-# MIDDLEWARE
+# MIDDLEWARE (CorsMiddleware must be as high as possible)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Must be here
-
-    'corsheaders.middleware.CorsMiddleware',
-
+    'corsheaders.middleware.CorsMiddleware',          # <-- moved up
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -125,6 +123,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # CORS (for React Native)
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = False   # Explicitly set – React Native uses headers, not cookies
 
 
 # DEFAULT PRIMARY KEY
