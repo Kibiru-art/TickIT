@@ -8,7 +8,7 @@ import dj_database_url
 from datetime import timedelta
 import cloudinary
 import cloudinary.uploader
-import cloudinary.api          # optional, but good for admin features
+import cloudinary.api
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -18,14 +18,12 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-secret-key')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
 
-
 # Cloudinary configuration (from environment variables)
 cloudinary.config(
     cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
     api_key=os.environ.get('CLOUDINARY_API_KEY'),
     api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
 )
-
 
 # APPLICATIONS
 INSTALLED_APPS = [
@@ -42,13 +40,12 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
-    'cloudinary_storage',
+    'cloudinary_storage',   # works with dj3-cloudinary-storage
     'cloudinary',
 
     # Your app
     'api',
 ]
-
 
 # MIDDLEWARE
 MIDDLEWARE = [
@@ -82,7 +79,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'tickit_backend.wsgi.application'
 
-
 # DATABASES
 if os.environ.get('DATABASE_URL'):
     DATABASES = {
@@ -99,7 +95,6 @@ else:
         }
     }
 
-
 # PASSWORD VALIDATION
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -108,34 +103,28 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
 # INTERNATIONALIZATION
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-
 # STATIC FILES (Whitenoise)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-
 # MEDIA FILES (Cloudinary)
 MEDIA_URL = '/media/'          # kept for compatibility
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')   # local fallback (not used on Render)
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'   # only once
-
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = False
 
-
 # DEFAULT PRIMARY KEY
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 # REST FRAMEWORK
 REST_FRAMEWORK = {
@@ -147,7 +136,6 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ),
 }
-
 
 # JWT SETTINGS
 SIMPLE_JWT = {
