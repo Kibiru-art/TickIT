@@ -1,8 +1,9 @@
-// src/services/api.ts (updated with profile API)
+// src/services/api.ts
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '../config';   // ✅ correct path
 
-const API_BASE_URL = 'http://192.168.137.101/api';  // <-- use YOUR actual IP
+const API_BASE_URL = BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -111,21 +112,15 @@ export const ticketAPI = {
   },
 };
 
-// ======================= NEW PROFILE API =======================
 export const profileAPI = {
-  // Get current user profile
   getProfile: async () => {
     const response = await api.get('/profile/');
     return response.data;
   },
-
-  // Update profile (name, phone, specialty, etc.)
   updateProfile: async (profileData: { name?: string; phone?: string; specialty?: string }) => {
     const response = await api.patch('/profile/', profileData);
     return response.data;
   },
-
-  // Change password
   changePassword: async (oldPassword: string, newPassword: string) => {
     const response = await api.post('/profile/change-password/', {
       old_password: oldPassword,
@@ -133,8 +128,6 @@ export const profileAPI = {
     });
     return response.data;
   },
-
-  // Change email
   changeEmail: async (newEmail: string, password: string) => {
     const response = await api.post('/profile/change-email/', {
       new_email: newEmail,

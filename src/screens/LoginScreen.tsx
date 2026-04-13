@@ -1,3 +1,4 @@
+// src/screens/LoginScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -26,6 +27,15 @@ export default function LoginScreen() {
 
   const { login, register } = useAuth();
 
+  const resetForm = () => {
+    setUsername('');
+    setPassword('');
+    setName('');
+    setEmail('');
+    setPhone('');
+    setSpecialty('General Support');
+  };
+
   const handleLogin = async () => {
     if (!username || !password) {
       Alert.alert('Error', 'Please enter username and password');
@@ -35,16 +45,12 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(username, password);
-      // If login succeeds, the app will navigate automatically (see App.tsx)
+      // navigation handled by AuthContext
     } catch (error: any) {
       let errorMsg = 'Invalid credentials';
-      if (error.response?.data?.detail) {
-        errorMsg = error.response.data.detail;
-      } else if (error.response?.data?.error) {
-        errorMsg = error.response.data.error;
-      } else if (error.message) {
-        errorMsg = error.message;
-      }
+      if (error.response?.data?.detail) errorMsg = error.response.data.detail;
+      else if (error.response?.data?.error) errorMsg = error.response.data.error;
+      else if (error.message) errorMsg = error.message;
       Alert.alert('Login Failed', errorMsg);
     } finally {
       setLoading(false);
@@ -53,31 +59,29 @@ export default function LoginScreen() {
 
   const handleRegister = async () => {
     if (!username || !password || !name || !email) {
-      Alert.alert('Error', 'Please fill all fields');
+      Alert.alert('Error', 'Please fill all required fields');
       return;
     }
 
     setLoading(true);
     try {
       await register({ username, password, name, email, phone, specialty });
-      // Registration succeeded, app will navigate automatically
+      // registration succeeded → automatically logged in
     } catch (error: any) {
       let errorMsg = 'Registration failed';
-      if (error.response?.data?.error) {
-        errorMsg = error.response.data.error;
-      } else if (error.response?.data?.detail) {
-        errorMsg = error.response.data.detail;
-      } else if (error.message) {
-        errorMsg = error.message;
-      }
+      if (error.response?.data?.error) errorMsg = error.response.data.error;
+      else if (error.response?.data?.detail) errorMsg = error.response.data.detail;
+      else if (error.message) errorMsg = error.message;
       Alert.alert('Registration Failed', errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  // ... rest of the component (same as before, no changes needed)
-
+  const toggleMode = () => {
+    setIsRegistering(!isRegistering);
+    resetForm();
+  };
 
   if (loading) {
     return (
@@ -92,9 +96,9 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}>
+        style={styles.keyboardView}
+      >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          
           <View style={styles.header}>
             <Text style={styles.logo}>🎫</Text>
             <Text style={styles.title}>TickIT</Text>
@@ -107,14 +111,14 @@ export default function LoginScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Full Name *"
-                  placeholderTextColor="#888888"
+                  placeholderTextColor="#888"
                   value={name}
                   onChangeText={setName}
                 />
                 <TextInput
                   style={styles.input}
                   placeholder="Email *"
-                  placeholderTextColor="#888888"
+                  placeholderTextColor="#888"
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -123,7 +127,7 @@ export default function LoginScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Phone (optional)"
-                  placeholderTextColor="#888888"
+                  placeholderTextColor="#888"
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
@@ -131,26 +135,26 @@ export default function LoginScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Specialty (optional)"
-                  placeholderTextColor="#888888"
+                  placeholderTextColor="#888"
                   value={specialty}
                   onChangeText={setSpecialty}
                 />
               </>
             )}
-            
+
             <TextInput
               style={styles.input}
               placeholder="Username *"
-              placeholderTextColor="#888888"
+              placeholderTextColor="#888"
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
             />
-            
+
             <TextInput
               style={styles.input}
               placeholder="Password *"
-              placeholderTextColor="#888888"
+              placeholderTextColor="#888"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -158,21 +162,14 @@ export default function LoginScreen() {
 
             <TouchableOpacity
               style={styles.button}
-              onPress={isRegistering ? handleRegister : handleLogin}>
+              onPress={isRegistering ? handleRegister : handleLogin}
+            >
               <Text style={styles.buttonText}>
                 {isRegistering ? 'Create Account' : 'Login'}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => {
-                setIsRegistering(!isRegistering);
-                setUsername('');
-                setPassword('');
-                setName('');
-                setEmail('');
-                setPhone('');
-              }}>
+            <TouchableOpacity onPress={toggleMode}>
               <Text style={styles.switchText}>
                 {isRegistering
                   ? 'Already have an account? Login'
@@ -187,80 +184,18 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#6200ee',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#6200ee',
-  },
-  loadingText: {
-    marginTop: 10,
-    color: 'white',
-    fontSize: 16,
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  logo: {
-    fontSize: 80,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 8,
-  },
-  form: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 30,
-    paddingBottom: 50,
-  },
-  input: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    color: '#333333'
-  },
-  button: {
-    backgroundColor: '#6200ee',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  switchText: {
-    textAlign: 'center',
-    marginTop: 20,
-    color: '#6200ee',
-    fontSize: 14,
-  },
+  container: { flex: 1, backgroundColor: '#6200ee' },
+  keyboardView: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#6200ee' },
+  loadingText: { marginTop: 10, color: 'white', fontSize: 16 },
+  header: { alignItems: 'center', paddingTop: 60, paddingBottom: 40 },
+  logo: { fontSize: 80, marginBottom: 10 },
+  title: { fontSize: 32, fontWeight: 'bold', color: 'white' },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 8 },
+  form: { backgroundColor: 'white', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, paddingBottom: 50 },
+  input: { backgroundColor: '#f5f5f5', padding: 15, borderRadius: 10, marginBottom: 15, fontSize: 16, borderWidth: 1, borderColor: '#e0e0e0', color: '#333' },
+  button: { backgroundColor: '#6200ee', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 10 },
+  buttonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  switchText: { textAlign: 'center', marginTop: 20, color: '#6200ee', fontSize: 14 },
 });
