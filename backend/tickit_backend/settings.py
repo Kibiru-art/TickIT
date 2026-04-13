@@ -40,14 +40,13 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
-    'cloudinary_storage',   # works with dj3-cloudinary-storage
-    'cloudinary',
+    'cloudinary',                      # official SDK
 
     # Your app
     'api',
 ]
 
-# MIDDLEWARE
+# MIDDLEWARE (unchanged)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -114,10 +113,9 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# MEDIA FILES (Cloudinary)
-MEDIA_URL = '/media/'          # kept for compatibility
+# MEDIA FILES – now handled manually via Cloudinary, so no DEFAULT_FILE_STORAGE
+MEDIA_URL = '/media/'          # kept only for compatibility (not used)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True

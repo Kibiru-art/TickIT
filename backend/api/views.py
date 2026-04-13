@@ -58,41 +58,51 @@ class TicketViewSet(viewsets.ModelViewSet):
         ticket.status = new_status
         ticket.save()
         return Response({'status': ticket.status, 'message': 'Status updated successfully'})
+# Inside your TicketViewSet, replace the upload_attachments method:
 
-    @action(detail=True, methods=['post'], url_path='attachments')
-    def upload_attachments(self, request, pk=None):
-        # Print debug info to Render logs
-        print("=" * 50)
-        print("DEBUG: Uploading attachment")
-        print(f"DEBUG: DEFAULT_FILE_STORAGE = {getattr(settings, 'DEFAULT_FILE_STORAGE', 'NOT SET')}")
-        print(f"DEBUG: Storage class = {default_storage.__class__.__name__}")
-        print(f"DEBUG: CLOUDINARY_CLOUD_NAME = {os.environ.get('CLOUDINARY_CLOUD_NAME')}")
-        print(f"DEBUG: CLOUDINARY_API_KEY = {os.environ.get('CLOUDINARY_API_KEY')}")
-        print(f"DEBUG: CLOUDINARY_API_SECRET (first 5 chars) = {os.environ.get('CLOUDINARY_API_SECRET', '')[:5]}")
-        print("=" * 50)
-        
-        ticket = self.get_object()
-        files = request.FILES.getlist('files')
-        if not files:
-            return Response({'error': 'No files provided'}, status=status.HTTP_400_BAD_REQUEST)
+@action(detail=True, methods=['post'], url_path='attachments')
+def upload_attachments(self, request, pk=None):
+    import cloudinary.uploader
+    from django.core.files.storage import default_storage
+    import os
+    from django.conf import settings
 
-        attachments = []
-        for file in files:
-            attachment = Attachment.objects.create(
-                ticket=ticket,
-                file=file,
-                name=file.name
-            )
-            print(f"DEBUG: Saved file URL = {attachment.file.url}")
-            attachments.append({
-                'id': attachment.id,
-                'name': attachment.name,
-                'url': attachment.file.url,
-                'uploaded_at': attachment.uploaded_at,
-            })
-        return Response({'attachments': attachments}, status=status.HTTP_201_CREATED)
+    # Optional debug prints
+    print("=" * 50)
+    print("DEBUG: Uploading attachment manually to Cloudinary")
+    print(f"DEBUG: CLOUDINARY_CLOUD_NAME = {os.environ.get('CLOUDINARY_CLOUD_NAME')}")
+    print("=" * 50)
 
+    ticket = self.get_object()
+    files = request.FILES.getlist('files')
+    if not files:
+        return Response({'error': 'No files provided'}, status=status.HTTP_400_BAD_REQUEST)
 
+    attachments = []
+    for file in files:
+        # Upload file directly to Cloudinary
+        try:
+            upload_result = cloudinary.uploader.upload(file)
+            cloudinary_url = upload_result['secure_url']
+        except Exception as e:
+            print(f"Cloudinary upload error: {e}")
+            return Response({'error': f'Failed to upload file: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Create attachment record with the Cloudinary URL
+        attachment = Attachment.objects.create(
+            ticket=ticket,
+            file=cloudinary_url,      # store the URL (not the file)
+            name=file.name
+        )
+        print(f"DEBUG: Saved file URL = {attachment.file}")
+
+        attachments.append({
+            'id': attachment.id,
+            'name': attachment.name,
+            'url': attachment.file,
+            'uploaded_at': attachment.uploaded_at,
+        })
+    return Response({'attachments': attachments}, status=status.HTTP_201_CREATED)
 # ======================= EXISTING GET CURRENT USER VIEW (unchanged) =======================
 
 class GetCurrentUserView(APIView):
