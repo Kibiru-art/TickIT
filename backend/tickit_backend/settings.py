@@ -8,6 +8,7 @@ import dj_database_url
 from datetime import timedelta
 import cloudinary
 import cloudinary.uploader
+import cloudinary.api          # optional, but good for admin features
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,9 +21,9 @@ ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
 
 # Cloudinary configuration (from environment variables)
 cloudinary.config(
-    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    api_key = os.environ.get('CLOUDINARY_API_KEY'),
-    api_secret = os.environ.get('CLOUDINARY_API_SECRET'),
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
 )
 
 
@@ -41,15 +42,15 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
-    'cloudinary_storage',          # <-- added
-    'cloudinary',                  # <-- added
+    'cloudinary_storage',
+    'cloudinary',
 
     # Your app
     'api',
 ]
 
 
-# MIDDLEWARE (CorsMiddleware must be high)
+# MIDDLEWARE
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -62,11 +63,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-
 ROOT_URLCONF = 'tickit_backend.urls'
 
-
-# TEMPLATES
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -82,11 +80,10 @@ TEMPLATES = [
     },
 ]
 
-
 WSGI_APPLICATION = 'tickit_backend.wsgi.application'
 
 
-# DATABASES (Local + Render PostgreSQL)
+# DATABASES
 if os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.config(
@@ -119,19 +116,19 @@ USE_I18N = True
 USE_TZ = True
 
 
-# STATIC FILES (Whitenoise handles these)
+# STATIC FILES (Whitenoise)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-# MEDIA FILES (Cloudinary handles these)
-MEDIA_URL = '/media/'          # not used directly but kept for compatibility
+# MEDIA FILES (Cloudinary)
+MEDIA_URL = '/media/'          # kept for compatibility
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')   # local fallback (not used on Render)
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'   # only once
 
 
-# CORS (for React Native)
+# CORS
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = False
 
