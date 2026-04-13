@@ -11,6 +11,9 @@ from .serializers import (
     TicketSerializer, ClientSerializer, TechnicianSerializer, AttachmentSerializer,
     UserProfileSerializer, UpdateProfileSerializer, ChangePasswordSerializer, ChangeEmailSerializer
 )
+import os  # <-- added for environment variables
+from django.core.files.storage import default_storage  # <-- added
+from django.conf import settings  # <-- added
 
 User = get_user_model()
 
@@ -58,6 +61,16 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='attachments')
     def upload_attachments(self, request, pk=None):
+        # Print debug info to Render logs
+        print("=" * 50)
+        print("DEBUG: Uploading attachment")
+        print(f"DEBUG: DEFAULT_FILE_STORAGE = {getattr(settings, 'DEFAULT_FILE_STORAGE', 'NOT SET')}")
+        print(f"DEBUG: Storage class = {default_storage.__class__.__name__}")
+        print(f"DEBUG: CLOUDINARY_CLOUD_NAME = {os.environ.get('CLOUDINARY_CLOUD_NAME')}")
+        print(f"DEBUG: CLOUDINARY_API_KEY = {os.environ.get('CLOUDINARY_API_KEY')}")
+        print(f"DEBUG: CLOUDINARY_API_SECRET (first 5 chars) = {os.environ.get('CLOUDINARY_API_SECRET', '')[:5]}")
+        print("=" * 50)
+        
         ticket = self.get_object()
         files = request.FILES.getlist('files')
         if not files:
@@ -70,6 +83,7 @@ class TicketViewSet(viewsets.ModelViewSet):
                 file=file,
                 name=file.name
             )
+            print(f"DEBUG: Saved file URL = {attachment.file.url}")
             attachments.append({
                 'id': attachment.id,
                 'name': attachment.name,
@@ -206,3 +220,25 @@ class ChangeEmailView(APIView):
         user.save()
 
         return Response({"message": "Email changed successfully.", "email": user.email}, status=status.HTTP_200_OK)
+
+
+# ======================= DEBUG VIEW (temporary) =======================
+from rest_framework.decorators import api_view, permission_classes
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def debug_storage(request):
+    """
+    Debug endpoint to check Cloudinary configuration and storage backend.
+    Call: GET /api/debug-storage/
+    """
+    return Response({
+        'cloudinary_cloud_name_from_settings': getattr(settings, 'CLOUDINARY', {}).get('cloud_name'),
+        'default_storage_class': default_storage.__class__.__name__,
+        'environment_variables': {
+            'CLOUDINARY_CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+            'CLOUDINARY_API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+            'CLOUDINARY_API_SECRET': os.environ.get('CLOUDINARY_API_SECRET')[:5] + '...' if os.environ.get('CLOUDINARY_API_SECRET') else None,
+        },
+        'django_default_file_storage': getattr(settings, 'DEFAULT_FILE_STORAGE', None),
+    })
