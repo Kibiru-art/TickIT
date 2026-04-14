@@ -22,7 +22,6 @@ class Client(models.Model):
         return self.name
 
 class Ticket(models.Model):
-    # ... (existing choices) ...
     CATEGORY_CHOICES = [
         ('Network Issue', 'Network Issue'),
         ('Computer Support', 'Computer Support'),
@@ -46,7 +45,6 @@ class Ticket(models.Model):
         ('Closed', 'Closed'),
     ]
     
-    # Existing fields
     ticket_number = models.CharField(max_length=20, unique=True, blank=True)
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -64,12 +62,11 @@ class Ticket(models.Model):
     time_spent = models.IntegerField(default=0, help_text="Time spent in minutes")
     notes = models.TextField(blank=True)
     
-    # NEW FIELD: tracks which user created the ticket
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='tickets_created',
-        null=True,          # Temporary: allow null for existing rows
+        null=True,
         blank=True
     )
     
@@ -91,7 +88,7 @@ class Ticket(models.Model):
 
 class Attachment(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='attachments')
-    file = models.FileField(upload_to='ticket_attachments/')
+    file = models.URLField(max_length=500)   # stores Cloudinary URL instead of a file
     name = models.CharField(max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
