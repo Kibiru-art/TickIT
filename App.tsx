@@ -166,7 +166,7 @@ const MainApp = ({ onOpenSidebar }: { onOpenSidebar: () => void }) => {
         clientName: ticket.client?.name || '',
         createdAt: ticket.created_at,
         updatedAt: ticket.updated_at,
-      })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      })).sort((a: { createdAt: string | number | Date; }, b: { createdAt: string | number | Date; }) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setTickets(mappedTickets);
     } catch (error: any) {
