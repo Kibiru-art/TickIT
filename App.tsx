@@ -1,4 +1,4 @@
-// App.tsx - with Profile, Settings, and Help screens – FULLY INTEGRATED
+// App.tsx - with Profile, Settings, and Help screens – FULLY INTEGRATED (test buttons removed)
 import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
@@ -32,11 +32,11 @@ import { SettingsProvider } from './src/context/SettingsContext';
 import LoginScreen from './src/screens/LoginScreen';
 import TicketCard from './src/components/TicketCard';
 import CreateTicketModal from './src/components/CreateTicketModal';
-import HelpModal from './src/components/HelpModal';          // keep if still used, but HelpScreen replaces it
+import HelpModal from './src/components/HelpModal';
 import TicketDetailModal from './src/components/TicketDetailModal';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import HelpScreen from './src/screens/HelpScreen';           // <-- ADDED
+import HelpScreen from './src/screens/HelpScreen';
 
 // ======================= IMPROVED SIDEBAR COMPONENT =======================
 interface SidebarProps {
@@ -124,10 +124,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 };
 
-// ======================= MAIN APP (logged in) – unchanged =======================
+// ======================= MAIN APP (logged in) – test buttons removed =======================
 const MainApp = ({ onOpenSidebar }: { onOpenSidebar: () => void }) => {
   const { user } = useAuth();
-  const { sendTestNotification } = useNotifications();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -167,7 +166,7 @@ const MainApp = ({ onOpenSidebar }: { onOpenSidebar: () => void }) => {
         clientName: ticket.client?.name || '',
         createdAt: ticket.created_at,
         updatedAt: ticket.updated_at,
-      })).sort((a: { createdAt: string | number | Date; }, b: { createdAt: string | number | Date; }) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setTickets(mappedTickets);
     } catch (error: any) {
@@ -310,34 +309,7 @@ const MainApp = ({ onOpenSidebar }: { onOpenSidebar: () => void }) => {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.testButton}
-          onPress={async () => {
-            try {
-              console.log('Testing connection to Django...');
-              const data = await ticketAPI.getAllTickets();
-              Alert.alert('✅ Connected!', `Found ${data.length} tickets in database`);
-            } catch (error: any) {
-              console.log('Error:', error.message);
-              if (error.response?.status === 401) {
-                Alert.alert('❌ Not Authenticated', 'Please login again');
-              } else {
-                Alert.alert('❌ Connection Failed', error.message);
-              }
-            }
-          }}
-        >
-          <Text style={styles.testButtonText}>🔌 Test Connection</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.notificationButton}
-          onPress={async () => {
-            await sendTestNotification();
-          }}
-        >
-          <Text style={styles.testButtonText}>📢 Test Notification</Text>
-        </TouchableOpacity>
+        {/* Test buttons removed */}
 
         <View style={styles.searchContainer}>
           <TextInput
@@ -430,7 +402,7 @@ const MainApp = ({ onOpenSidebar }: { onOpenSidebar: () => void }) => {
 // ======================= AUTHENTICATED ROOT WITH SCREEN SWITCHING =======================
 const AuthenticatedApp = () => {
   const { user, logout } = useAuth();
-  const [currentScreen, setCurrentScreen] = useState<'main' | 'profile' | 'settings' | 'help'>('main');  // <-- added 'help'
+  const [currentScreen, setCurrentScreen] = useState<'main' | 'profile' | 'settings' | 'help'>('main');
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
   const handleSidebarNavigate = (screen: string) => {
@@ -441,7 +413,7 @@ const AuthenticatedApp = () => {
       case 'settings':
         setCurrentScreen('settings');
         break;
-      case 'help':                                                // <-- added case
+      case 'help':
         setCurrentScreen('help');
         break;
       default:
@@ -481,7 +453,7 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (currentScreen === 'help') {                                   // <-- added block
+  if (currentScreen === 'help') {
     return (
       <>
         <HelpScreen onBack={goBackToMain} />
