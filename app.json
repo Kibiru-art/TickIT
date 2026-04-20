@@ -4,7 +4,7 @@
     "slug": "TickIT",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.jpg",
+    "icon": "./assets/icon.png",          
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -17,13 +17,13 @@
       "bundleIdentifier": "com.anonymous.TickIT"
     },
     "android": {
-      "versionCode": 1,
+      "versionCode": 1,                   
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.TickIT"
+      "package": "com.anonymous.TickIT"   
     },
     "web": {
       "favicon": "./assets/favicon.png"

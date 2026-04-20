@@ -1,7 +1,7 @@
 // src/services/api.ts
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '../config';   // ✅ correct path
+import { BASE_URL } from '../config';
 
 const API_BASE_URL = BASE_URL;
 
@@ -78,8 +78,13 @@ export const authAPI = {
   },
 
   logout: async (refreshToken: string) => {
-    await axios.post(`${API_BASE_URL}/auth/logout/`, { refresh: refreshToken });
-    await AsyncStorage.multiRemove(['access_token', 'refresh_token']);
+    try {
+      await api.post('/auth/logout/', { refresh: refreshToken });
+    } catch (error: any) {
+      console.warn('Logout API error (ignored):', error.response?.data || error.message);
+    } finally {
+      await AsyncStorage.multiRemove(['access_token', 'refresh_token']);
+    }
   },
 };
 
